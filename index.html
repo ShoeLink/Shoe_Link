@@ -1,0 +1,2583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShoeLink - Basketball Shoe Finder Quiz</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: #ffffff;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+            max-width: 700px;
+            width: 100%;
+            padding: 50px;
+            border: 1px solid rgba(14, 165, 233, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            color: #0f172a;
+            font-size: 32px;
+            margin-bottom: 12px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            color: #64748b;
+            font-size: 16px;
+            font-weight: 400;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            margin-bottom: 40px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-bar.show {
+            display: block;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #06b6d4 0%, #0ea5e9 100%);
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 10px;
+        }
+
+        .question-container {
+            display: none;
+        }
+
+        .question-container.active {
+            display: block;
+            animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .question-number {
+            color: #0ea5e9;
+            font-weight: 600;
+            margin-bottom: 12px;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .progress-percent {
+            color: #64748b;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .question-text {
+            font-size: 22px;
+            color: #0f172a;
+            margin-bottom: 28px;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        .multi-select-note {
+            font-size: 13px;
+            color: #94a3b8;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 420px;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+
+        .options::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .options::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 10px;
+        }
+
+        .options::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .options::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        .option {
+            padding: 18px 22px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #ffffff;
+            font-size: 15px;
+            color: #334155;
+            display: flex;
+            align-items: center;
+            position: relative;
+            font-weight: 500;
+        }
+
+        .option:hover {
+            border-color: #0ea5e9;
+            background: #f0f9ff;
+            transform: translateX(4px);
+        }
+
+        .option.selected {
+            border-color: #0ea5e9;
+            background: linear-gradient(135deg, #06b6d4 0%, #0ea5e9 100%);
+            color: white;
+        }
+
+        .option.selected::before {
+            content: "✓";
+            position: absolute;
+            right: 22px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        /* Ranking question styles */
+        .ranking-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .ranking-item {
+            padding: 18px 22px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            cursor: move;
+            background: #ffffff;
+            font-size: 15px;
+            color: #334155;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            position: relative;
+            font-weight: 500;
+            transition: all 0.2s;
+            touch-action: none; /* Prevent scrolling while dragging on mobile */
+            user-select: none; /* Prevent text selection on mobile */
+        }
+
+        .ranking-item:hover {
+            border-color: #0ea5e9;
+            background: #f0f9ff;
+        }
+
+        .ranking-item.dragging {
+            opacity: 0.5;
+        }
+
+        .ranking-item:active {
+            opacity: 0.7;
+            transform: scale(0.98);
+        }
+
+        .ranking-number {
+            background: linear-gradient(135deg, #06b6d4 0%, #0ea5e9 100%);
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .ranking-text {
+            flex: 1;
+        }
+
+        .drag-handle {
+            color: #94a3b8;
+            font-size: 20px;
+            cursor: move;
+        }
+
+        .text-input {
+            width: 100%;
+            min-height: 140px;
+            padding: 18px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 15px;
+            font-family: inherit;
+            resize: vertical;
+            transition: all 0.2s ease;
+            color: #334155;
+        }
+
+        .text-input:focus {
+            outline: none;
+            border-color: #0ea5e9;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+        }
+
+        .buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 35px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-next {
+            flex: 1;
+            background: linear-gradient(135deg, #06b6d4 0%, #0ea5e9 100%);
+            color: white;
+            box-shadow: 0 4px 6px rgba(6, 182, 212, 0.2);
+        }
+
+        .btn-next:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(6, 182, 212, 0.3);
+        }
+
+        .btn-next:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-back {
+            background: #f1f5f9;
+            color: #475569;
+            padding: 15px 25px;
+            border: 2px solid #e2e8f0;
+        }
+
+        .btn-back:hover {
+            background: #e2e8f0;
+            border-color: #cbd5e1;
+        }
+
+        .results {
+            display: none;
+        }
+
+        .results.active {
+            display: block;
+            animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .results h2 {
+            color: #0f172a;
+            font-size: 28px;
+            margin-bottom: 16px;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .results-intro {
+            color: #64748b;
+            margin-bottom: 35px;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .shoe-recommendation {
+            background: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 28px;
+            margin-bottom: 20px;
+            transition: all 0.2s ease;
+        }
+
+        .shoe-recommendation:hover {
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            transform: translateY(-2px);
+        }
+
+        .shoe-recommendation.best-overall {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-color: #f59e0b;
+        }
+
+        .recommendation-badge {
+            display: inline-block;
+            padding: 7px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 14px;
+            letter-spacing: 0.8px;
+        }
+
+        .badge-best {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .shoe-name {
+            font-size: 24px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 12px;
+            letter-spacing: -0.3px;
+        }
+
+        .shoe-reason {
+            color: #475569;
+            line-height: 1.7;
+            margin-bottom: 14px;
+            font-size: 15px;
+        }
+
+        .shoe-features {
+            color: #64748b;
+            font-size: 14px;
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid #e2e8f0;
+            line-height: 1.6;
+        }
+
+        .shoe-features strong {
+            color: #334155;
+        }
+
+        .personalized-note {
+            background: #f0f9ff;
+            border-left: 4px solid #0ea5e9;
+            padding: 14px 16px;
+            margin: 16px 0;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #334155;
+            line-height: 1.6;
+        }
+
+        .personalized-note strong {
+            color: #0ea5e9;
+        }
+
+        /* Paywall Section */
+        .paywall-section {
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+            border-radius: 16px;
+            padding: 40px;
+            margin-top: 30px;
+            text-align: center;
+            color: white;
+        }
+
+        .paywall-title {
+            font-size: 26px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: white;
+        }
+
+        .paywall-subtitle {
+            color: #94a3b8;
+            font-size: 15px;
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+
+        .paywall-features {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 28px;
+            text-align: left;
+        }
+
+        .paywall-feature {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 12px;
+            font-size: 14px;
+            color: #e2e8f0;
+        }
+
+        .paywall-feature:last-child {
+            margin-bottom: 0;
+        }
+
+        .paywall-feature::before {
+            content: "✓";
+            color: #10b981;
+            font-weight: 700;
+            flex-shrink: 0;
+            font-size: 16px;
+        }
+
+        .paywall-price {
+            font-size: 48px;
+            font-weight: 700;
+            color: #06b6d4;
+            margin-bottom: 8px;
+        }
+
+        .paywall-price-note {
+            color: #94a3b8;
+            font-size: 13px;
+            margin-bottom: 24px;
+        }
+
+        .btn-unlock {
+            background: linear-gradient(135deg, #06b6d4 0%, #0ea5e9 100%);
+            color: white;
+            padding: 18px 40px;
+            border-radius: 10px;
+            font-size: 17px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 8px 20px rgba(6, 182, 212, 0.3);
+        }
+
+        .btn-unlock:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(6, 182, 212, 0.4);
+        }
+
+        .btn-restart {
+            background: #f1f5f9;
+            color: #475569;
+            margin: 35px auto 0;
+            display: block;
+            border: 2px solid #e2e8f0;
+        }
+
+        .btn-restart:hover {
+            background: #e2e8f0;
+            border-color: #cbd5e1;
+        }
+
+        /* Welcome page specific styles */
+        .welcome-box {
+            background: #f0f9ff;
+            border-left: 4px solid #0ea5e9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 35px;
+            text-align: left;
+        }
+
+        .welcome-box ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .welcome-box li {
+            color: #334155;
+            font-size: 15px;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+
+        .welcome-box li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #0ea5e9;
+            font-weight: bold;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="data:image/jpeg;base64,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" alt="ShoeLink Logo" style="max-width: 400px; width: 90%; height: auto; margin: 0 auto 10px; display: block;">
+            <p>Find Your Perfect Basketball Shoes</p>
+        </div>
+
+        <div class="progress-bar" id="progressBar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <!-- Welcome Page -->
+        <div class="question-container active" data-question="0">
+            <div style="text-align: center; padding: 20px 0;">
+                <h2 style="color: #0ea5e9; font-size: 36px; font-weight: 700; margin-bottom: 20px; letter-spacing: -0.5px;">
+                    Welcome to ShoeLink!
+                </h2>
+                <p style="color: #64748b; font-size: 18px; line-height: 1.7; margin-bottom: 30px;">
+                    Take this short quiz to find the perfect basketball shoe for your playing style, fit, and budget.
+                </p>
+                <p style="color: #475569; font-size: 16px; line-height: 1.6; margin-bottom: 35px;">
+                    In just 2 minutes, you'll get personalized recommendations from our comprehensive database of basketball shoes.
+                </p>
+                <div class="welcome-box">
+                    <p style="color: #0f172a; font-size: 16px; margin-bottom: 12px; font-weight: 600;">
+                        What you'll get:
+                    </p>
+                    <ul>
+                        <li>Your #1 perfect match (free)</li>
+                        <li>Unlock top 5 detailed recommendations ($3)</li>
+                        <li>Expert explanations for each pick</li>
+                        <li>Detailed comparison data</li>
+                    </ul>
+                </div>
+                <button class="btn btn-next" onclick="startQuiz()" style="width: 100%; font-size: 18px; padding: 18px;">
+                    Start Quiz →
+                </button>
+                <p style="color: #94a3b8; font-size: 13px; margin-top: 20px;">
+                    Takes less than 2 minutes • See top result free
+                </p>
+            </div>
+        </div>
+
+        <!-- Question 1 -->
+        <div class="question-container" data-question="1">
+            <div class="question-number">
+                <span>Question 1 of 9</span>
+                <span class="progress-percent">11% Complete</span>
+            </div>
+            <div class="question-text">How would you best describe your play style when you're on the basketball court?</div>
+            <div class="multi-select-note">Select all that apply</div>
+            <div class="options" data-multi="true">
+                <div class="option" data-value="quick">Quick & Shifty (Guards, ball-handlers)</div>
+                <div class="option" data-value="shooter">Shooter (Spot-up/Off-ball)</div>
+                <div class="option" data-value="big">Big/Post Player</div>
+                <div class="option" data-value="versatile">Versatile/All-around</div>
+                <div class="option" data-value="other_style">Other</div>
+            </div>
+            <div class="buttons">
+                <button class="btn btn-next" onclick="nextQuestion()">Next</button>
+            </div>
+        </div>
+
+        <!-- Question 2 -->
+        <div class="question-container" data-question="2">
+            <div class="question-number">
+                <span>Question 2 of 9</span>
+                <span class="progress-percent">22% Complete</span>
+            </div>
+            <div class="question-text">Do you need any special features or fit from your basketball shoes?</div>
+            <div class="multi-select-note">Select all that apply</div>
+            <div class="options" data-multi="true">
+                <div class="option" data-value="narrow">Narrow fit</div>
+                <div class="option" data-value="wide">Wide fit</div>
+                <div class="option" data-value="flat">Flat feet support</div>
+                <div class="option" data-value="arch">High arch support</div>
+                <div class="option" data-value="no_pref">No specific preference</div>
+                <div class="option" data-value="other_fit">Other</div>
+            </div>
+            <div class="buttons">
+                <button class="btn btn-back" onclick="prevQuestion()">Back</button>
+                <button class="btn btn-next" onclick="nextQuestion()">Next</button>
+            </div>
+        </div>
+
+        <!-- Question 3 -->
+        <div class="question-container" data-question="3">
+            <div class="question-number">
+                <span>Question 3 of 9</span>
+                <span class="progress-percent">33% Complete</span>
+            </div>
+            <div class="question-text">How much does ankle support matter to you in a basketball shoe?</div>
+            <div class="multi-select-note">Select all that apply</div>
+            <div class="options" data-multi="true">
+                <div class="option" data-value="extremely">Extremely important</div>
+                <div class="option" data-value="important">Important</div>
+                <div class="option" data-value="somewhat">Somewhat important</div>
+                <div class="option" data-value="not_important">Not important</div>
+                <div class="option" data-value="other_support">Other</div>
+            </div>
+            <div class="buttons">
+                <button class="btn btn-back" onclick="prevQuestion()">Back</button>
+                <button class="btn btn-next" onclick="nextQuestion()">Next</button>
+            </div>
+        </div>
+
+        <!-- Question 4 -->
+        <div class="question-container" data-question="4">
+            <div class="question-number">
+                <span>Question 4 of 9</span>
+                <span class="progress-percent">44% Complete</span>
+            </div>
+            <div class="question-text">Which basketball shoe brands do you currently wear or want to try?</div>
+            <div class="multi-select-note">Select all that apply</div>
+            <div class="options" data-multi="true">
+                <div class="option" data-value="nike">Nike</div>
+                <div class="option" data-value="adidas">Adidas</div>
+                <div class="option" data-value="lining">Way of Wade/Li-Ning</div>
+                <div class="option" data-value="ua">Under Armour</div>
+                <div class="option" data-value="nb">New Balance</div>
+                <div class="option" data-value="anta">ANTA</div>
+                <div class="option" data-value="puma">Puma</div>
+                <div class="option" data-value="361">361°</div>
+                <div class="option" data-value="other_brand">Other</div>
+            </div>
+            <div class="buttons">
+                <button class="btn btn-back" onclick="prevQuestion()">Back</button>
+                <button class="btn btn-next" onclick="nextQuestion()">Next</button>
+            </div>
+        </div>
+
+        <!-- Question 5 - RANKING -->
+        <div class="question-container" data-question="5">
+            <div class="question-number">
+                <span>Question 5 of 9</span>
+                <span class="progress-percent">56% Complete</span>
+            </div>
+            <div class="question-text">Rank these features from MOST to LEAST important (drag to reorder)</div>
+            <div class="multi-select-note">Drag to arrange your priorities from 1 (most important) to 7 (least important)</div>
+            <div class="ranking-container" id="rankingContainer">
+                <div class="ranking-item" draggable="true" data-value="traction">
+                    <span class="ranking-number">1</span>
+                    <span class="ranking-text">Traction & Grip</span>
+                    <span class="drag-handle">☰</span>
+                </div>
+                <div class="ranking-item" draggable="true" data-value="speed">
+                    <span class="ranking-number">2</span>
+                    <span class="ranking-text">Speed & Agility</span>
+                    <span class="drag-handle">☰</span>
+                </div>
+                <div class="ranking-item" draggable="true" data-value="stability">
+                    <span class="ranking-number">3</span>
+                    <span class="ranking-text">Ankle Stability</span>
+                    <span class="drag-handle">☰</span>
+                </div>
+                <div class="ranking-item" draggable="true" data-value="cushion">
+                    <span class="ranking-number">4</span>
+                    <span class="ranking-text">Cushioning</span>
+                    <span class="drag-handle">☰</span>
+                </div>
+                <div class="ranking-item" draggable="true" data-value="durable">
+                    <span class="ranking-number">5</span>
+                    <span class="ranking-text">Durable Materials</span>
+                    <span class="drag-handle">☰</span>
+                </div>
+                <div class="ranking-item" draggable="true" data-value="style">
+                    <span class="ranking-number">6</span>
+                    <span class="ranking-text">Appearance</span>
+                    <span class="drag-handle">☰</span>
+                </div>
+                <div class="ranking-item" draggable="true" data-value="price">
+                    <span class="ranking-number">7</span>
+                    <span class="ranking-text">Best Price</span>
+                    <span class="drag-handle">☰</span>
+                </div>
+            </div>
+            <div class="buttons">
+                <button class="btn btn-back" onclick="prevQuestion()">Back</button>
+                <button class="btn btn-next" onclick="nextQuestion()">Next</button>
+            </div>
+        </div>
+
+        <!-- Question 6 -->
+        <div class="question-container" data-question="6">
+            <div class="question-number">
+                <span>Question 6 of 9</span>
+                <span class="progress-percent">67% Complete</span>
+            </div>
+            <div class="question-text">Where do you play most of your basketball games?</div>
+            <div class="options" data-multi="false">
+                <div class="option" data-value="outdoor">Outdoor courts</div>
+                <div class="option" data-value="indoor">Indoor courts</div>
+                <div class="option" data-value="both">Both equally</div>
+            </div>
+            <div class="buttons">
+                <button class="btn btn-back" onclick="prevQuestion()">Back</button>
+                <button class="btn btn-next" onclick="nextQuestion()">Next</button>
+            </div>
+        </div>
+
+        <!-- Question 7 -->
+        <div class="question-container" data-question="7">
+            <div class="question-number">
+                <span>Question 7 of 9</span>
+                <span class="progress-percent">78% Complete</span>
+            </div>
+            <div class="question-text">How clean or dusty are the courts you usually play on?</div>
+            <div class="options" data-multi="false">
+                <div class="option" data-value="very_clean">Very clean</div>
+                <div class="option" data-value="mostly_clean">Mostly clean</div>
+                <div class="option" data-value="dusty">A little dusty</div>
+                <div class="option" data-value="very_dusty">Very dusty</div>
+            </div>
+            <div class="buttons">
+                <button class="btn btn-back" onclick="prevQuestion()">Back</button>
+                <button class="btn btn-next" onclick="nextQuestion()">Next</button>
+            </div>
+        </div>
+
+        <!-- Question 8 -->
+        <div class="question-container" data-question="8">
+            <div class="question-number">
+                <span>Question 8 of 9</span>
+                <span class="progress-percent">89% Complete</span>
+            </div>
+            <div class="question-text">What's your usual budget range when buying basketball shoes?</div>
+            <div class="options" data-multi="false">
+                <div class="option" data-value="under100">Under $100</div>
+                <div class="option" data-value="100-150">$100–$150</div>
+                <div class="option" data-value="150-200">$150–$200</div>
+                <div class="option" data-value="200-250">$200-250</div>
+                <div class="option" data-value="luxury">$$$$$$$$</div>
+                <div class="option" data-value="other_budget">Other</div>
+            </div>
+            <div class="buttons">
+                <button class="btn btn-back" onclick="prevQuestion()">Back</button>
+                <button class="btn btn-next" onclick="nextQuestion()">Next</button>
+            </div>
+        </div>
+
+        <!-- Question 9 -->
+        <div class="question-container" data-question="9">
+            <div class="question-number">
+                <span>Question 9 of 9</span>
+                <span class="progress-percent">100% Complete</span>
+            </div>
+            <div class="question-text">Do you have any injuries, pain points, or recurring issues that should be considered for your basketball shoes?</div>
+            <textarea class="text-input" id="injuryInput" placeholder="Type your answer here... (e.g., ankle sprains, knee pain, plantar fasciitis, etc.)"></textarea>
+            <div class="buttons">
+                <button class="btn btn-back" onclick="prevQuestion()">Back</button>
+                <button class="btn btn-next" onclick="showEmailCollection()">Continue</button>
+            </div>
+        </div>
+
+        <!-- Email Collection -->
+        <div class="question-container" data-question="10">
+            <div class="question-number">
+                <span>Final Step</span>
+                <span class="progress-percent">🎉 Almost Done</span>
+            </div>
+            <div class="question-text">Enter your email to get your personalized shoe recommendation</div>
+            <p style="color: #64748b; font-size: 14px; margin-bottom: 20px; line-height: 1.6;">
+                We'll send you your top result plus exclusive deals and early access to new releases. No spam, unsubscribe anytime.
+            </p>
+            <input 
+                type="email" 
+                class="text-input" 
+                id="emailInput" 
+                placeholder="your.email@example.com"
+                style="min-height: 50px; font-size: 16px;"
+                required
+            />
+            <div class="buttons">
+                <button class="btn btn-back" onclick="prevQuestion()">Back</button>
+                <button class="btn btn-next" onclick="collectEmailAndShowResults()">Get My Results →</button>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div class="results" id="results">
+            <h2>Your Perfect Basketball Shoe</h2>
+            <p class="results-intro">Based on your answers, here is your top recommendation:</p>
+            <div id="recommendationsList"></div>
+            <button class="btn btn-restart" onclick="restartQuiz()">Take Quiz Again</button>
+        </div>
+    </div>
+
+    <script>
+        let currentQuestion = 0;
+        const totalQuestions = 10;
+        const answers = {};
+
+        // MASSIVELY EXPANDED shoe database - your 28 priority shoes get higher popularity scores
+        const shoeDatabase = [
+// COMPREHENSIVE 100+ SHOE DATABASE - 2024-2026 CURRENT RELEASES ONLY
+// Your 28 priority shoes: popularity 85-99 (pushed to top)
+// Additional 72+ shoes: popularity 50-84 (still shown but ranked lower)
+
+
+    // ============================================
+    // YOUR 28 PRIORITY SHOES (Popularity 85-99)
+    // ============================================
+    
+    {
+        name: "Kobe 6 Protro",
+        brand: "nike",
+        playStyle: ["quick", "shooter"],
+        fit: ["narrow", "no_pref"],
+        support: ["somewhat", "not_important"],
+        features: ["speed"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["150-200", "200-250", "luxury"],
+        popularity: 99,
+        description: "Legendary low-top with elite traction. Perfect for quick guards. 2024-2025 Protro releases"
+    },
+    {
+        name: "Nike LeBron 21",
+        brand: "nike",
+        playStyle: ["big", "versatile"],
+        fit: ["wide", "no_pref"],
+        support: ["extremely", "important"],
+        features: ["cushion", "stability"],
+        court: ["indoor", "both"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["200-250", "luxury"],
+        popularity: 98,
+        description: "2024 release. Premium cushioning and stability for power players and versatile forwards"
+    },
+    {
+        name: "Kobe 8 Protro",
+        brand: "nike",
+        playStyle: ["quick", "versatile"],
+        fit: ["no_pref"],
+        support: ["somewhat", "not_important"],
+        features: ["speed"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["150-200", "200-250"],
+        popularity: 97,
+        description: "2024-2025 Protro. Flexible, lightweight, smooth traction for fast guards"
+    },
+    {
+        name: "Jordan Luka 3",
+        brand: "nike",
+        playStyle: ["versatile", "quick"],
+        fit: ["no_pref"],
+        support: ["somewhat", "important"],
+        features: ["speed", "cushion", "style"],
+        court: ["indoor", "both"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["150-200"],
+        popularity: 96,
+        description: "2024 release. Excellent all-around performance for versatile players"
+    },
+    {
+        name: "Way of Wade 12",
+        brand: "lining",
+        playStyle: ["quick", "versatile"],
+        fit: ["no_pref"],
+        support: ["somewhat", "important"],
+        features: ["speed", "cushion"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150", "150-200"],
+        popularity: 95,
+        description: "2025-2026 release. Lightweight, responsive, incredible value for guards"
+    },
+    {
+        name: "Nike G.T. Cut 4",
+        brand: "nike",
+        playStyle: ["quick", "versatile"],
+        fit: ["no_pref"],
+        support: ["somewhat", "important"],
+        features: ["speed", "cushion"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["150-200", "200-250"],
+        popularity: 95,
+        description: "2025-2026 release. Updated cushioning and elite grip for explosive guards"
+    },
+    {
+        name: "Nike G.T. Cut 3",
+        brand: "nike",
+        playStyle: ["quick"],
+        fit: ["narrow", "no_pref"],
+        support: ["somewhat"],
+        features: ["speed"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["150-200"],
+        popularity: 94,
+        description: "2024 release. Explosive traction, lightweight for quick guards"
+    },
+    {
+        name: "Jordan Luka 4",
+        brand: "nike",
+        playStyle: ["versatile"],
+        fit: ["no_pref"],
+        support: ["important"],
+        features: ["cushion", "stability"],
+        court: ["indoor", "outdoor", "both"],
+        cleanliness: ["very_clean", "mostly_clean", "dusty"],
+        budget: ["150-200"],
+        popularity: 94,
+        description: "2025-2026 release. Enhanced cushioning and durability for indoor/outdoor"
+    },
+    {
+        name: "Kobe 9 Elite",
+        brand: "nike",
+        playStyle: ["quick", "versatile"],
+        fit: ["no_pref"],
+        support: ["somewhat", "important"],
+        features: ["speed", "cushion"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["200-250", "luxury"],
+        popularity: 96,
+        description: "2024-2025 Protro. Flyknit upper, responsive for agile players"
+    },
+    {
+        name: "Nike Ja 3",
+        brand: "nike",
+        playStyle: ["quick", "versatile"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["speed", "cushion"],
+        court: ["indoor", "both"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150", "150-200"],
+        popularity: 92,
+        description: "2024-2025. Balanced cushioning and traction for guards, great value"
+    },
+    {
+        name: "Nike Sabrina 3",
+        brand: "nike",
+        playStyle: ["quick", "versatile"],
+        fit: ["narrow", "no_pref"],
+        support: ["somewhat", "important"],
+        features: ["speed", "cushion"],
+        court: ["indoor", "outdoor", "both"],
+        cleanliness: ["very_clean", "mostly_clean", "dusty"],
+        budget: ["100-150"],
+        popularity: 91,
+        description: "2025-2026 release. Upgraded cushioning and support, indoor/outdoor versatility"
+    },
+    {
+        name: "Nike KD 18",
+        brand: "nike",
+        playStyle: ["shooter", "versatile"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["cushion"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["150-200"],
+        popularity: 90,
+        description: "2025-2026 release. Smooth ride with excellent cushioning for shooters"
+    },
+    {
+        name: "Under Armour Curry 7",
+        brand: "ua",
+        playStyle: ["shooter", "quick"],
+        fit: ["narrow", "no_pref"],
+        support: ["somewhat"],
+        features: ["speed"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150", "150-200"],
+        popularity: 90,
+        description: "Low-profile shooter's shoe, excellent traction and court feel"
+    },
+    {
+        name: "Nike Sabrina 2",
+        brand: "nike",
+        playStyle: ["quick"],
+        fit: ["narrow", "no_pref"],
+        support: ["somewhat"],
+        features: ["speed"],
+        court: ["indoor", "outdoor", "both"],
+        cleanliness: ["very_clean", "mostly_clean", "dusty"],
+        budget: ["100-150"],
+        popularity: 89,
+        description: "2024-2025. Lightweight for quick players, indoor/outdoor flexibility"
+    },
+    {
+        name: "ANTA Kai 1",
+        brand: "anta",
+        playStyle: ["quick", "versatile"],
+        fit: ["no_pref"],
+        support: ["somewhat", "important"],
+        features: ["speed"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150", "150-200"],
+        popularity: 88,
+        description: "2024-2025. Lightweight, excellent value, great for guards"
+    },
+    {
+        name: "ANTA Kai 2",
+        brand: "anta",
+        playStyle: ["quick", "versatile"],
+        fit: ["no_pref"],
+        support: ["important"],
+        features: ["speed", "cushion"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["150-200"],
+        popularity: 89,
+        description: "2025-2026 release. Updated cushioning and support for guards"
+    },
+    {
+        name: "Nike Book 1",
+        brand: "nike",
+        playStyle: ["shooter"],
+        fit: ["narrow"],
+        support: ["somewhat"],
+        features: ["speed"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["under100", "100-150"],
+        popularity: 88,
+        description: "2024-2025. Budget-friendly with excellent traction for shooters"
+    },
+    {
+        name: "Adidas AE 1",
+        brand: "adidas",
+        playStyle: ["big", "versatile"],
+        fit: ["no_pref", "wide"],
+        support: ["important", "extremely"],
+        features: ["durable", "stability"],
+        court: ["indoor", "both"],
+        cleanliness: ["very_clean", "mostly_clean", "dusty"],
+        budget: ["under100", "100-150"],
+        popularity: 87,
+        description: "2024 release. Durable, stable, budget-friendly for big players"
+    },
+    {
+        name: "Adidas Harden v.9",
+        brand: "adidas",
+        playStyle: ["versatile", "big"],
+        fit: ["no_pref", "wide"],
+        support: ["important"],
+        features: ["cushion", "stability"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150", "150-200"],
+        popularity: 86,
+        description: "2025-2026 release. Upgraded cushioning and support for versatile players"
+    },
+    {
+        name: "Adidas Harden v.8",
+        brand: "adidas",
+        playStyle: ["big", "versatile"],
+        fit: ["no_pref", "wide"],
+        support: ["important", "extremely"],
+        features: ["stability", "cushion"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150", "150-200"],
+        popularity: 85,
+        description: "2024-2025. Stability and midfoot support for bigger players"
+    },
+    {
+        name: "Way of Wade 5 Ultra V2",
+        brand: "lining",
+        playStyle: ["quick"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["speed"],
+        court: ["indoor", "outdoor", "both"],
+        cleanliness: ["very_clean", "mostly_clean", "dusty"],
+        budget: ["100-150"],
+        popularity: 85,
+        description: "2024-2025. Lightweight, durable for indoor/outdoor guards"
+    },
+    {
+        name: "Way of Wade 10",
+        brand: "lining",
+        playStyle: ["quick"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["cushion", "speed"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150"],
+        popularity: 84,
+        description: "2024-2025. Cushion-focused guard shoe, responsive and lightweight"
+    },
+    {
+        name: "New Balance Fresh Foam BB V2",
+        brand: "nb",
+        playStyle: ["big", "versatile"],
+        fit: ["wide", "no_pref"],
+        support: ["important", "extremely"],
+        features: ["cushion", "stability"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150", "150-200"],
+        popularity: 83,
+        description: "2024-2025. Excellent cushioning and support for bigger players"
+    },
+    {
+        name: "Adidas Don Issue 6",
+        brand: "adidas",
+        playStyle: ["quick", "shooter"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["speed"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["under100", "100-150"],
+        popularity: 82,
+        description: "2024-2025. Affordable, responsive for guards and shooters"
+    },
+    {
+        name: "Way of Wade All City 13",
+        brand: "lining",
+        playStyle: ["quick", "versatile"],
+        fit: ["no_pref"],
+        support: ["somewhat", "important"],
+        features: ["durable", "speed"],
+        court: ["outdoor", "both"],
+        cleanliness: ["dusty", "very_dusty", "mostly_clean"],
+        budget: ["under100", "100-150"],
+        popularity: 81,
+        description: "2025-2026 release. Durable outdoor shoe with solid traction"
+    },
+    {
+        name: "Way of Wade All City 12",
+        brand: "lining",
+        playStyle: ["quick", "versatile"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["durable", "speed"],
+        court: ["outdoor", "both"],
+        cleanliness: ["dusty", "very_dusty", "mostly_clean"],
+        budget: ["under100", "100-150"],
+        popularity: 80,
+        description: "2024-2025. Budget outdoor shoe for guards, good durability"
+    },
+    {
+        name: "Puma Court Rider",
+        brand: "puma",
+        playStyle: ["versatile"],
+        fit: ["no_pref"],
+        support: ["somewhat", "important"],
+        features: ["durable"],
+        court: ["outdoor", "both"],
+        cleanliness: ["dusty", "very_dusty", "mostly_clean"],
+        budget: ["under100", "100-150"],
+        popularity: 78,
+        description: "2024-2025. Durable outdoor versatile shoe"
+    },
+    {
+        name: "361 Joker Series",
+        brand: "361",
+        playStyle: ["quick", "versatile"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["durable", "speed"],
+        court: ["outdoor", "both"],
+        cleanliness: ["dusty", "very_dusty", "mostly_clean"],
+        budget: ["under100", "100-150"],
+        popularity: 75,
+        description: "2024-2025. Budget outdoor shoe, solid traction on dusty courts"
+    },
+
+    // ============================================
+    // ADDITIONAL 72 POPULAR CURRENT SHOES (50-84)
+    // ============================================
+    
+    {
+        name: "Jordan Tatum 3",
+        brand: "nike",
+        playStyle: ["versatile", "quick"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["speed", "style"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150", "150-200"],
+        popularity: 76,
+        description: "2025-2026 release. Jayson Tatum's third signature, sleek and versatile"
+    },
+    {
+        name: "Jordan Tatum 2",
+        brand: "nike",
+        playStyle: ["versatile", "quick"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["speed", "style"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150", "150-200"],
+        popularity: 74,
+        description: "2024-2025. Good all-around performance for versatile wings"
+    },
+    {
+        name: "Nike LeBron NXXT Gen",
+        brand: "nike",
+        playStyle: ["versatile", "big"],
+        fit: ["no_pref"],
+        support: ["important"],
+        features: ["cushion", "speed"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["150-200", "200-250"],
+        popularity: 73,
+        description: "2024-2025. Lighter weight LeBron, versatile performance"
+    },
+    {
+        name: "Nike PG 6",
+        brand: "nike",
+        playStyle: ["quick", "versatile"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["speed", "cushion"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150"],
+        popularity: 72,
+        description: "2024 release. Budget-friendly, good all-around guard shoe"
+    },
+    {
+        name: "Jordan Zion 3",
+        brand: "nike",
+        playStyle: ["big", "versatile"],
+        fit: ["wide", "no_pref"],
+        support: ["important"],
+        features: ["cushion", "stability"],
+        court: ["indoor", "both"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150", "150-200"],
+        popularity: 71,
+        description: "2024-2025. Built for powerful forwards, wide base and cushioning"
+    },
+    {
+        name: "Adidas Dame 8",
+        brand: "adidas",
+        playStyle: ["quick", "shooter"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["speed", "cushion"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150", "150-200"],
+        popularity: 70,
+        description: "2024 release. Solid guard shoe with Bounce cushioning"
+    },
+    {
+        name: "Adidas Anthony Edwards 1",
+        brand: "adidas",
+        playStyle: ["quick", "versatile"],
+        fit: ["no_pref"],
+        support: ["somewhat", "important"],
+        features: ["speed", "cushion"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150", "150-200"],
+        popularity: 69,
+        description: "2024-2025. Young star's signature, good all-around performance"
+    },
+    {
+        name: "Nike Zoom Freak 5",
+        brand: "nike",
+        playStyle: ["versatile", "big"],
+        fit: ["no_pref", "wide"],
+        support: ["important"],
+        features: ["cushion", "speed"],
+        court: ["indoor", "both"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150", "150-200"],
+        popularity: 68,
+        description: "2024-2025. Giannis' signature, great for versatile forwards"
+    },
+    {
+        name: "Adidas Trae Young 3",
+        brand: "adidas",
+        playStyle: ["quick", "shooter"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["speed"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150"],
+        popularity: 66,
+        description: "2024-2025. Lightweight guard shoe, good for quick players"
+    },
+    {
+        name: "Nike Kyrie Low 5",
+        brand: "nike",
+        playStyle: ["quick"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["speed"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150"],
+        popularity: 65,
+        description: "2024 release. Low-to-ground feel for quick guards"
+    },
+    {
+        name: "New Balance Two WXY v4",
+        brand: "nb",
+        playStyle: ["versatile"],
+        fit: ["wide", "no_pref"],
+        support: ["somewhat", "important"],
+        features: ["cushion"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150", "150-200"],
+        popularity: 64,
+        description: "2024-2025. Versatile performance shoe, Fresh Foam cushioning"
+    },
+    {
+        name: "Puma All-Pro Nitro",
+        brand: "puma",
+        playStyle: ["versatile"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["cushion"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150"],
+        popularity: 62,
+        description: "2024 release. Puma's performance shoe, Nitro foam cushioning"
+    },
+    {
+        name: "Puma Stewie 2",
+        brand: "puma",
+        playStyle: ["quick", "versatile"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["speed"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150"],
+        popularity: 60,
+        description: "2024-2025. Breanna Stewart signature, good for guards and forwards"
+    },
+    {
+        name: "Under Armour Curry 11",
+        brand: "ua",
+        playStyle: ["shooter", "quick"],
+        fit: ["narrow", "no_pref"],
+        support: ["somewhat"],
+        features: ["speed"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["150-200"],
+        popularity: 74,
+        description: "2024-2025. Latest Curry signature, excellent traction for shooters"
+    },
+    {
+        name: "Under Armour Curry 10",
+        brand: "ua",
+        playStyle: ["shooter", "quick"],
+        fit: ["narrow", "no_pref"],
+        support: ["somewhat"],
+        features: ["speed"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150", "150-200"],
+        popularity: 72,
+        description: "2024. Great shooter's shoe with low-profile fit"
+    },
+    {
+        name: "Under Armour Havoc 5",
+        brand: "ua",
+        playStyle: ["quick"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["speed"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["under100"],
+        popularity: 55,
+        description: "2024. Budget option for guards, decent performance"
+    },
+    {
+        name: "Nike Kobe 4 Protro",
+        brand: "nike",
+        playStyle: ["quick", "shooter"],
+        fit: ["narrow", "no_pref"],
+        support: ["somewhat"],
+        features: ["speed"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["150-200", "200-250", "luxury"],
+        popularity: 93,
+        description: "2024-2025 Protro releases. Classic Kobe silhouette, excellent for guards"
+    },
+    {
+        name: "Nike Kobe 5 Protro",
+        brand: "nike",
+        playStyle: ["quick", "versatile"],
+        fit: ["narrow", "no_pref"],
+        support: ["somewhat"],
+        features: ["speed"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["150-200", "200-250"],
+        popularity: 94,
+        description: "2024-2025 Protro. Versatile performance, great for fast players"
+    },
+    {
+        name: "Nike LeBron 20",
+        brand: "nike",
+        playStyle: ["big", "versatile"],
+        fit: ["wide", "no_pref"],
+        support: ["extremely", "important"],
+        features: ["cushion", "stability"],
+        court: ["indoor", "both"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["150-200", "200-250"],
+        popularity: 85,
+        description: "2024. Previous LeBron model, still excellent for power players"
+    },
+    {
+        name: "Nike G.T. Cut 2",
+        brand: "nike",
+        playStyle: ["quick"],
+        fit: ["narrow", "no_pref"],
+        support: ["somewhat"],
+        features: ["speed"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["150-200"],
+        popularity: 90,
+        description: "2024. Previous GT Cut model, still elite traction for guards"
+    },
+    {
+        name: "Jordan Luka 2",
+        brand: "nike",
+        playStyle: ["versatile", "quick"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["speed", "cushion"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150", "150-200"],
+        popularity: 84,
+        description: "2024. Luka's second signature, good all-around shoe"
+    },
+    {
+        name: "Jordan Luka 1",
+        brand: "nike",
+        playStyle: ["versatile", "quick"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["speed", "cushion"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150"],
+        popularity: 78,
+        description: "2024. First Luka signature, solid versatile option"
+    },
+    {
+        name: "Nike Ja 2",
+        brand: "nike",
+        playStyle: ["quick", "versatile"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["speed"],
+        court: ["indoor", "both"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150"],
+        popularity: 80,
+        description: "2024. Ja's second signature, good for guards"
+    },
+    {
+        name: "Nike Sabrina 1",
+        brand: "nike",
+        playStyle: ["quick"],
+        fit: ["narrow", "no_pref"],
+        support: ["somewhat"],
+        features: ["speed"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["under100", "100-150"],
+        popularity: 76,
+        description: "2024. First Sabrina signature, budget-friendly guard shoe"
+    },
+    {
+        name: "Nike Book 1",
+        brand: "nike",
+        playStyle: ["shooter", "quick"],
+        fit: ["narrow"],
+        support: ["somewhat"],
+        features: ["speed"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["under100", "100-150"],
+        popularity: 88,
+        description: "2024-2025. Devin Booker's first signature, excellent value"
+    },
+    {
+        name: "Nike Cosmic Unity 3",
+        brand: "nike",
+        playStyle: ["versatile"],
+        fit: ["no_pref"],
+        support: ["important"],
+        features: ["cushion", "durable"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["150-200"],
+        popularity: 65,
+        description: "2024-2025. Sustainable materials, good cushioning"
+    },
+    {
+        name: "Nike Precision 7",
+        brand: "nike",
+        playStyle: ["versatile"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["durable"],
+        court: ["indoor", "outdoor", "both"],
+        cleanliness: ["mostly_clean", "dusty"],
+        budget: ["under100"],
+        popularity: 58,
+        description: "2024-2025. Budget all-around shoe, durable"
+    },
+    {
+        name: "Nike Renew Elevate 3",
+        brand: "nike",
+        playStyle: ["versatile"],
+        fit: ["no_pref"],
+        support: ["important"],
+        features: ["cushion"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["under100"],
+        popularity: 56,
+        description: "2024. Budget option with decent cushioning"
+    },
+    {
+        name: "Adidas AE 2",
+        brand: "adidas",
+        playStyle: ["big", "versatile"],
+        fit: ["no_pref", "wide"],
+        support: ["important", "extremely"],
+        features: ["durable", "stability"],
+        court: ["indoor", "both"],
+        cleanliness: ["very_clean", "mostly_clean", "dusty"],
+        budget: ["100-150"],
+        popularity: 83,
+        description: "2025-2026 release. Updated Anthony Edwards signature, improved support"
+    },
+    {
+        name: "Adidas Dame 9",
+        brand: "adidas",
+        playStyle: ["quick", "shooter"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["speed", "cushion"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150", "150-200"],
+        popularity: 72,
+        description: "2025-2026 release. Latest Dame signature, solid guard shoe"
+    },
+    {
+        name: "Adidas Harden v.7",
+        brand: "adidas",
+        playStyle: ["big", "versatile"],
+        fit: ["no_pref", "wide"],
+        support: ["important"],
+        features: ["stability", "cushion"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150"],
+        popularity: 74,
+        description: "2024. Previous Harden model, good stability"
+    },
+    {
+        name: "Adidas D.O.N. Issue 5",
+        brand: "adidas",
+        playStyle: ["quick", "shooter"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["speed"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["under100"],
+        popularity: 70,
+        description: "2024. Budget Donovan Mitchell signature"
+    },
+    {
+        name: "Adidas Exhibit A",
+        brand: "adidas",
+        playStyle: ["versatile"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["durable"],
+        court: ["indoor", "outdoor", "both"],
+        cleanliness: ["mostly_clean", "dusty"],
+        budget: ["under100"],
+        popularity: 54,
+        description: "2024-2025. Budget all-around option"
+    },
+    {
+        name: "Adidas Pro Bounce",
+        brand: "adidas",
+        playStyle: ["versatile", "big"],
+        fit: ["no_pref", "wide"],
+        support: ["important"],
+        features: ["cushion"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["under100", "100-150"],
+        popularity: 58,
+        description: "2024. Budget option with Bounce cushioning"
+    },
+    {
+        name: "Adidas Pro Next",
+        brand: "adidas",
+        playStyle: ["quick"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["speed"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["under100"],
+        popularity: 52,
+        description: "2024. Budget guard shoe"
+    },
+    {
+        name: "Under Armour Curry Flow 10",
+        brand: "ua",
+        playStyle: ["shooter", "quick"],
+        fit: ["narrow", "no_pref"],
+        support: ["somewhat"],
+        features: ["speed"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["150-200"],
+        popularity: 73,
+        description: "2024. Curry Flow line, grippy rubber-less outsole"
+    },
+    {
+        name: "Under Armour Curry 9",
+        brand: "ua",
+        playStyle: ["shooter", "quick"],
+        fit: ["narrow", "no_pref"],
+        support: ["somewhat"],
+        features: ["speed"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150"],
+        popularity: 70,
+        description: "2024. Previous Curry model, still solid for shooters"
+    },
+    {
+        name: "Under Armour Spawn 6",
+        brand: "ua",
+        playStyle: ["versatile"],
+        fit: ["no_pref"],
+        support: ["important"],
+        features: ["cushion"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["under100", "100-150"],
+        popularity: 60,
+        description: "2024-2025. Budget all-around shoe"
+    },
+    {
+        name: "Under Armour HOVR Havoc 4",
+        brand: "ua",
+        playStyle: ["quick"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["cushion"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["under100"],
+        popularity: 54,
+        description: "2024. Budget guard option with HOVR cushioning"
+    },
+    {
+        name: "New Balance Two WXY v3",
+        brand: "nb",
+        playStyle: ["versatile"],
+        fit: ["wide", "no_pref"],
+        support: ["somewhat"],
+        features: ["cushion"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150"],
+        popularity: 66,
+        description: "2024. Previous Two WXY model, good for wider feet"
+    },
+    {
+        name: "New Balance 650",
+        brand: "nb",
+        playStyle: ["versatile", "big"],
+        fit: ["wide", "no_pref"],
+        support: ["important"],
+        features: ["stability"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150"],
+        popularity: 62,
+        description: "2024. Retro-inspired, good support"
+    },
+    {
+        name: "New Balance FuelCell",
+        brand: "nb",
+        playStyle: ["quick"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["speed"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150"],
+        popularity: 58,
+        description: "2024-2025. Lightweight with FuelCell cushioning"
+    },
+    {
+        name: "Li-Ning YuShuai 15",
+        brand: "lining",
+        playStyle: ["quick", "versatile"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["speed"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150"],
+        popularity: 58,
+        description: "2024-2025. Chinese brand offering, good for quick players"
+    },
+    {
+        name: "Li-Ning Speed 9",
+        brand: "lining",
+        playStyle: ["quick"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["speed"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150"],
+        popularity: 56,
+        description: "2024-2025. Lightweight guard shoe"
+    },
+    {
+        name: "Li-Ning Cloud 5",
+        brand: "lining",
+        playStyle: ["versatile"],
+        fit: ["no_pref"],
+        support: ["important"],
+        features: ["cushion"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150"],
+        popularity: 54,
+        description: "2024. Cushioning focus, all-around performance"
+    },
+    {
+        name: "Peak Lou Williams 7",
+        brand: "other_brand",
+        playStyle: ["quick", "shooter"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["speed"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["under100", "100-150"],
+        popularity: 52,
+        description: "2024-2025. Budget Chinese brand, decent for guards"
+    },
+    {
+        name: "Peak Tony Parker 9",
+        brand: "other_brand",
+        playStyle: ["quick"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["speed"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150"],
+        popularity: 50,
+        description: "2024. Tony Parker signature, guard-focused"
+    },
+    {
+        name: "361 Big3 Future",
+        brand: "361",
+        playStyle: ["versatile"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["durable"],
+        court: ["indoor", "outdoor", "both"],
+        cleanliness: ["mostly_clean", "dusty"],
+        budget: ["under100"],
+        popularity: 48,
+        description: "2024-2025. Budget all-around, indoor/outdoor capable"
+    },
+    {
+        name: "361 Aaron Gordon 6",
+        brand: "361",
+        playStyle: ["versatile", "big"],
+        fit: ["no_pref"],
+        support: ["important"],
+        features: ["cushion"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150"],
+        popularity: 54,
+        description: "2024-2025. Aaron Gordon signature, good cushioning"
+    },
+    {
+        name: "ANTA Shock Wave 6",
+        brand: "anta",
+        playStyle: ["versatile"],
+        fit: ["no_pref"],
+        support: ["important"],
+        features: ["cushion"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150"],
+        popularity: 64,
+        description: "2024-2025. ANTA performance line, good cushioning"
+    },
+    {
+        name: "ANTA GH4",
+        brand: "anta",
+        playStyle: ["big", "versatile"],
+        fit: ["no_pref", "wide"],
+        support: ["important", "extremely"],
+        features: ["stability", "cushion"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150", "150-200"],
+        popularity: 68,
+        description: "2024. Gordon Hayward signature, stable for bigger players"
+    },
+    {
+        name: "ANTA KT9",
+        brand: "anta",
+        playStyle: ["shooter", "quick"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["speed"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150"],
+        popularity: 75,
+        description: "2024-2025. Klay Thompson signature, shooter-focused"
+    },
+    {
+        name: "Puma MB.03",
+        brand: "puma",
+        playStyle: ["quick", "versatile"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["speed", "style"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150"],
+        popularity: 76,
+        description: "2024-2025. LaMelo Ball signature, flashy and functional"
+    },
+    {
+        name: "Puma MB.02",
+        brand: "puma",
+        playStyle: ["quick", "versatile"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["speed"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150"],
+        popularity: 70,
+        description: "2024. Previous LaMelo model"
+    },
+    {
+        name: "Puma Stewie 3",
+        brand: "puma",
+        playStyle: ["quick", "versatile"],
+        fit: ["no_pref"],
+        support: ["somewhat", "important"],
+        features: ["speed", "cushion"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150"],
+        popularity: 64,
+        description: "2025-2026 release. Breanna Stewart's latest signature"
+    },
+    {
+        name: "Puma Fusion Nitro",
+        brand: "puma",
+        playStyle: ["versatile"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["cushion"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["under100", "100-150"],
+        popularity: 56,
+        description: "2024. Budget performance shoe with Nitro foam"
+    },
+    {
+        name: "Puma Clyde All-Pro Nitro",
+        brand: "puma",
+        playStyle: ["versatile"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["cushion"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150"],
+        popularity: 58,
+        description: "2024. Updated Clyde model, good cushioning"
+    },
+    {
+        name: "Puma TRC Blaze Court",
+        brand: "puma",
+        playStyle: ["quick"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["speed"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["under100"],
+        popularity: 50,
+        description: "2024. Budget guard option"
+    },
+    {
+        name: "Jordan Zion 2",
+        brand: "nike",
+        playStyle: ["big", "versatile"],
+        fit: ["wide", "no_pref"],
+        support: ["important"],
+        features: ["cushion"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150"],
+        popularity: 68,
+        description: "2024. Previous Zion model, good for power players"
+    },
+    {
+        name: "Jordan Tatum 1",
+        brand: "nike",
+        playStyle: ["versatile"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["speed"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150"],
+        popularity: 70,
+        description: "2024. First Tatum signature, solid all-around"
+    },
+    {
+        name: "Nike Zoom Freak 4",
+        brand: "nike",
+        playStyle: ["versatile", "big"],
+        fit: ["no_pref", "wide"],
+        support: ["important"],
+        features: ["cushion"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150"],
+        popularity: 64,
+        description: "2024. Previous Giannis model"
+    },
+    {
+        name: "Nike KD 17",
+        brand: "nike",
+        playStyle: ["shooter", "versatile"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["cushion"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["150-200"],
+        popularity: 70,
+        description: "2024-2025. Kevin Durant's latest, smooth and comfortable"
+    },
+    {
+        name: "Nike PG 7",
+        brand: "nike",
+        playStyle: ["quick", "versatile"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["speed"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150"],
+        popularity: 68,
+        description: "2025-2026 release. Latest Paul George signature"
+    },
+    {
+        name: "Nike Kyrie Infinity",
+        brand: "nike",
+        playStyle: ["quick"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["speed"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150"],
+        popularity: 72,
+        description: "2024. Latest Kyrie, excellent for quick guards"
+    },
+    {
+        name: "Nike Air Zoom G.T. Jump 2",
+        brand: "nike",
+        playStyle: ["versatile"],
+        fit: ["no_pref"],
+        support: ["important"],
+        features: ["cushion"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["150-200"],
+        popularity: 66,
+        description: "2024-2025. Versatile performance shoe with Zoom cushioning"
+    },
+    {
+        name: "Nike Air Zoom G.T. Run",
+        brand: "nike",
+        playStyle: ["quick", "versatile"],
+        fit: ["no_pref"],
+        support: ["somewhat"],
+        features: ["speed"],
+        court: ["indoor"],
+        cleanliness: ["very_clean", "mostly_clean"],
+        budget: ["100-150"],
+        popularity: 62,
+        description: "2024. Lightweight performance shoe"
+    }
+
+        ];
+
+        // Ranking functionality with MOBILE TOUCH SUPPORT
+        let draggedItem = null;
+        let touchDraggedItem = null;
+
+        function initRankingDragAndDrop() {
+            const items = document.querySelectorAll('.ranking-item');
+            
+            items.forEach(item => {
+                // DESKTOP: Mouse drag events
+                item.addEventListener('dragstart', function(e) {
+                    draggedItem = this;
+                    this.classList.add('dragging');
+                });
+
+                item.addEventListener('dragend', function(e) {
+                    this.classList.remove('dragging');
+                });
+
+                item.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                });
+
+                item.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    if (draggedItem !== this) {
+                        const container = document.getElementById('rankingContainer');
+                        const allItems = [...container.children];
+                        const draggedIndex = allItems.indexOf(draggedItem);
+                        const targetIndex = allItems.indexOf(this);
+                        
+                        if (draggedIndex < targetIndex) {
+                            this.parentNode.insertBefore(draggedItem, this.nextSibling);
+                        } else {
+                            this.parentNode.insertBefore(draggedItem, this);
+                        }
+                        
+                        updateRankingNumbers();
+                    }
+                });
+
+                // MOBILE: Touch events
+                item.addEventListener('touchstart', function(e) {
+                    touchDraggedItem = this;
+                    this.style.opacity = '0.5';
+                    e.preventDefault();
+                }, { passive: false });
+
+                item.addEventListener('touchmove', function(e) {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+                    
+                    if (target && target.classList.contains('ranking-item') && target !== touchDraggedItem) {
+                        const container = document.getElementById('rankingContainer');
+                        const allItems = [...container.children];
+                        const draggedIndex = allItems.indexOf(touchDraggedItem);
+                        const targetIndex = allItems.indexOf(target);
+                        
+                        if (draggedIndex < targetIndex) {
+                            target.parentNode.insertBefore(touchDraggedItem, target.nextSibling);
+                        } else {
+                            target.parentNode.insertBefore(touchDraggedItem, target);
+                        }
+                        
+                        updateRankingNumbers();
+                    }
+                }, { passive: false });
+
+                item.addEventListener('touchend', function(e) {
+                    this.style.opacity = '1';
+                    touchDraggedItem = null;
+                });
+            });
+        }
+
+        function updateRankingNumbers() {
+            const items = document.querySelectorAll('.ranking-item');
+            items.forEach((item, index) => {
+                item.querySelector('.ranking-number').textContent = index + 1;
+            });
+        }
+
+        function getRankedFeatures() {
+            const items = document.querySelectorAll('.ranking-item');
+            const ranked = [];
+            items.forEach((item, index) => {
+                ranked.push({
+                    feature: item.getAttribute('data-value'),
+                    rank: index + 1
+                });
+            });
+            return ranked;
+        }
+
+        // Start quiz function
+        function startQuiz() {
+            currentQuestion = 1;
+            document.getElementById('progressBar').classList.add('show');
+            showQuestion(1);
+            
+            // Initialize drag and drop for ranking when that question appears
+            setTimeout(() => {
+                initRankingDragAndDrop();
+            }, 500);
+        }
+
+        // Initialize option click handlers
+        document.querySelectorAll('.options').forEach(optionsContainer => {
+            const isMulti = optionsContainer.getAttribute('data-multi') === 'true';
+            
+            optionsContainer.querySelectorAll('.option').forEach(option => {
+                option.addEventListener('click', function() {
+                    const container = this.closest('.question-container');
+                    const questionNum = container.getAttribute('data-question');
+                    
+                    if (isMulti) {
+                        this.classList.toggle('selected');
+                        const selected = Array.from(optionsContainer.querySelectorAll('.option.selected'))
+                            .map(opt => opt.getAttribute('data-value'));
+                        answers[`q${questionNum}`] = selected;
+                    } else {
+                        optionsContainer.querySelectorAll('.option').forEach(opt => opt.classList.remove('selected'));
+                        this.classList.add('selected');
+                        answers[`q${questionNum}`] = [this.getAttribute('data-value')];
+                    }
+                });
+            });
+        });
+
+        function nextQuestion() {
+            // For ranking question, save the ranked order
+            if (currentQuestion === 5) {
+                answers.q5 = getRankedFeatures();
+            }
+            
+            if (currentQuestion < totalQuestions) {
+                currentQuestion++;
+                showQuestion(currentQuestion);
+            }
+        }
+
+        function prevQuestion() {
+            if (currentQuestion > 1) {
+                currentQuestion--;
+                showQuestion(currentQuestion);
+            } else if (currentQuestion === 1) {
+                currentQuestion = 0;
+                document.getElementById('progressBar').classList.remove('show');
+                showQuestion(0);
+            }
+        }
+
+        function showQuestion(questionNum) {
+            document.querySelectorAll('.question-container').forEach(q => q.classList.remove('active'));
+            document.querySelector(`[data-question="${questionNum}"]`).classList.add('active');
+            if (questionNum > 0) {
+                updateProgress();
+            }
+        }
+
+        function updateProgress() {
+            const progress = (currentQuestion / totalQuestions) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+        }
+
+        function calculateRecommendations() {
+            answers.q9 = document.getElementById('injuryInput').value;
+
+            // STEP 1: HARD FILTER - Remove shoes that don't match budget OR brand
+            // Price and brand are NON-NEGOTIABLE
+            const filteredShoes = shoeDatabase.filter(shoe => {
+                // BAN LIST - Never recommend these
+                if (shoe.name === "Jordan Luka 3") return false;
+                
+                // HARD REQUIREMENT #1: Budget must match
+                const budgetMatch = answers.q8 && answers.q8.some(budget => shoe.budget.includes(budget));
+                if (!budgetMatch) return false;
+                
+                // HARD REQUIREMENT #2: Brand must match (if they selected brands)
+                if (answers.q4 && answers.q4.length > 0) {
+                    const brandMatch = answers.q4.includes(shoe.brand);
+                    if (!brandMatch) return false;
+                }
+                
+                // Passed all hard filters
+                return true;
+            });
+            
+            // If no shoes match their strict requirements, show error
+            if (filteredShoes.length === 0) {
+                return [{
+                    name: "No matches found",
+                    description: "No shoes match your exact budget and brand requirements. Try selecting more brands or expanding your budget range.",
+                    popularity: 0
+                }];
+            }
+
+            // STEP 2: Score only the filtered shoes
+            const scored = filteredShoes.map(shoe => {
+                let score = 0;
+                
+                // Play style match (30 points)
+                if (answers.q1 && answers.q1.some(style => shoe.playStyle.includes(style))) {
+                    score += 30;
+                }
+                
+                // Fit requirements (25 points)
+                if (answers.q2 && answers.q2.some(fit => shoe.fit.includes(fit))) {
+                    score += 25;
+                }
+                
+                // Ankle support (20 points)
+                if (answers.q3 && answers.q3.some(sup => shoe.support.includes(sup))) {
+                    score += 20;
+                }
+                
+                // Brand preference (already filtered, but give bonus for perfect match)
+                if (answers.q4 && answers.q4.includes(shoe.brand)) {
+                    score += 15;
+                }
+                
+                // Performance features - WEIGHTED BY RANKING
+                if (answers.q5 && Array.isArray(answers.q5)) {
+                    answers.q5.forEach((ranked, index) => {
+                        const weight = 20 - (index * 2.5); // More granular weights for 7 items
+                        if (shoe.features.includes(ranked.feature)) {
+                            score += weight;
+                        }
+                    });
+                }
+                
+                // Court type (15 points)
+                if (answers.q6 && answers.q6.some(court => shoe.court.includes(court))) {
+                    score += 15;
+                }
+                
+                // Court cleanliness (10 points)
+                if (answers.q7 && answers.q7.some(clean => shoe.cleanliness.includes(clean))) {
+                    score += 10;
+                }
+                
+                // Budget already filtered as hard requirement, give bonus for exact match
+                if (answers.q8 && answers.q8.some(budget => shoe.budget.includes(budget))) {
+                    score += 20;
+                }
+                
+                return { shoe, matchScore: score, popularity: shoe.popularity };
+            });
+            
+            // STEP 3: Apply popularity boost for FREE result (within filtered shoes only)
+            scored.forEach(item => {
+                // MASSIVE popularity boost for shoes 95+ (Kobes, LeBrons, GT Cuts, etc.)
+                if (item.popularity >= 95) {
+                    item.finalScore = item.matchScore * 1.8 + item.popularity;
+                } else if (item.popularity >= 90) {
+                    item.finalScore = item.matchScore * 1.4 + item.popularity;
+                } else if (item.popularity >= 85) {
+                    item.finalScore = item.matchScore * 1.1 + item.popularity;
+                } else {
+                    item.finalScore = item.matchScore + (item.popularity * 0.5);
+                }
+            });
+            
+            // STEP 4: Sort by final score
+            scored.sort((a, b) => b.finalScore - a.finalScore);
+            
+            // STEP 5: Return top 5 (or fewer if not enough matches)
+            return scored.slice(0, 5).map(item => item.shoe);
+        }
+
+        function showEmailCollection() {
+            answers.q9 = document.getElementById('injuryInput').value;
+            currentQuestion = 10;
+            showQuestion(10);
+        }
+
+        function collectEmailAndShowResults() {
+            const emailInput = document.getElementById('emailInput');
+            const email = emailInput.value.trim();
+            
+            if (!email || !isValidEmail(email)) {
+                alert('Please enter a valid email address to see your results.');
+                emailInput.focus();
+                return;
+            }
+            
+            answers.email = email;
+            sendToGoogleSheets(answers);
+            showResults();
+        }
+
+        function sendToGoogleSheets(data) {
+            const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbznmwS2q3blcuUloAM5a_9bgcTDCQe4UNo8iHSENqPi3aJVtAbO6uAuHRU-TqLFsB3-/exec';
+            
+            // Convert ranking to string
+            let rankingString = '';
+            if (Array.isArray(data.q5)) {
+                rankingString = data.q5.map(r => `${r.rank}. ${r.feature}`).join(', ');
+            }
+            
+            const formData = {
+                timestamp: new Date().toISOString(),
+                email: data.email,
+                playStyle: Array.isArray(data.q1) ? data.q1.join(', ') : '',
+                fitNeeds: Array.isArray(data.q2) ? data.q2.join(', ') : '',
+                ankleSupport: Array.isArray(data.q3) ? data.q3.join(', ') : '',
+                brands: Array.isArray(data.q4) ? data.q4.join(', ') : '',
+                featureRanking: rankingString,
+                courtType: Array.isArray(data.q6) ? data.q6.join(', ') : '',
+                courtCleanliness: Array.isArray(data.q7) ? data.q7.join(', ') : '',
+                budget: Array.isArray(data.q8) ? data.q8.join(', ') : '',
+                injuries: data.q9 || ''
+            };
+            
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(() => {
+                console.log('Data sent to Google Sheets successfully');
+            })
+            .catch((error) => {
+                console.error('Error sending to Google Sheets:', error);
+            });
+        }
+
+        function isValidEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+
+        function showResults() {
+            const topShoes = calculateRecommendations();
+            const resultsContainer = document.getElementById('recommendationsList');
+            
+            resultsContainer.innerHTML = '';
+            
+            // Personalized intro
+            const playStyleText = getPlayStyleText();
+            const courtText = getCourtText();
+            const supportText = getSupportText();
+            
+            const personalizedIntro = document.createElement('div');
+            personalizedIntro.className = 'personalized-note';
+            personalizedIntro.innerHTML = `
+                <strong>Based on your profile:</strong> ${playStyleText} ${courtText} ${supportText}
+            `;
+            resultsContainer.appendChild(personalizedIntro);
+            
+            // Show ONLY the #1 recommendation (free)
+            const topShoe = topShoes[0];
+            const topShoeDiv = document.createElement('div');
+            topShoeDiv.className = 'shoe-recommendation best-overall';
+            topShoeDiv.innerHTML = `
+                <div class="recommendation-badge badge-best">🏆 Your Perfect Match</div>
+                <div class="shoe-name">${topShoe.name}</div>
+                <div class="shoe-reason">${getPersonalizedReason(topShoe, 'best')}</div>
+                <div class="shoe-features"><strong>Why it's perfect:</strong> ${topShoe.description}</div>
+            `;
+            resultsContainer.appendChild(topShoeDiv);
+            
+            // PAYWALL - $3 to unlock top 5
+            const paywallDiv = document.createElement('div');
+            paywallDiv.className = 'paywall-section';
+            paywallDiv.innerHTML = `
+                <div class="paywall-title">Unlock Your Complete Top 5 Matches</div>
+                <div class="paywall-subtitle">Get detailed analysis, comparison data, and expert explanations for all your top matches</div>
+                
+                <div class="paywall-features">
+                    <div class="paywall-feature">Your top 5 shoe recommendations ranked by match score</div>
+                    <div class="paywall-feature">Detailed explanations for why each shoe fits your game</div>
+                    <div class="paywall-feature">Side-by-side comparison with ratings for speed, cushion, support & durability</div>
+                    <div class="paywall-feature">Data-backed insights on traction, fit, and performance</div>
+                    <div class="paywall-feature">Alternative options if your top picks are sold out</div>
+                </div>
+                
+                <div class="paywall-price">$3</div>
+                <div class="paywall-price-note">One-time payment • Instant access</div>
+                
+                <!-- Primary method: Direct link (most reliable) -->
+                <a href="https://buy.stripe.com/3cIaEX1bz01y8Rcge49EI00" 
+                   class="btn-unlock" 
+                   onclick="saveDataBeforePayment()"
+                   style="display: inline-block; text-decoration: none; text-align: center;">
+                   🔓 Unlock Full Results
+                </a>
+                
+                <!-- Fallback: If link doesn't work, JavaScript button -->
+                <button class="btn-unlock" onclick="handleUnlock()" style="display: none;" id="fallbackUnlockBtn">
+                   🔓 Unlock Full Results (Fallback)
+                </button>
+            `;
+            resultsContainer.appendChild(paywallDiv);
+            
+            document.querySelectorAll('.question-container').forEach(q => q.classList.remove('active'));
+            document.getElementById('results').classList.add('active');
+        }
+
+        function handleUnlock() {
+            // Save quiz data FIRST (in case redirect fails)
+            try {
+                localStorage.setItem('shoelink_email', answers.email);
+                localStorage.setItem('shoelink_answers', JSON.stringify(answers));
+                localStorage.setItem('shoelink_timestamp', new Date().toISOString());
+            } catch(error) {
+                console.error('Failed to save data:', error);
+            }
+            
+            // Use location.replace instead of location.href (more reliable)
+            // This prevents back button issues and works better with some browsers
+            window.location.replace('https://buy.stripe.com/3cIaEX1bz01y8Rcge49EI00');
+        }
+        
+        function saveDataBeforePayment() {
+            // This runs when the direct link is clicked
+            // Save data immediately so it's available after payment
+            try {
+                localStorage.setItem('shoelink_email', answers.email);
+                localStorage.setItem('shoelink_answers', JSON.stringify(answers));
+                localStorage.setItem('shoelink_timestamp', new Date().toISOString());
+                console.log('✅ Quiz data saved successfully');
+            } catch(error) {
+                console.error('❌ Failed to save data:', error);
+            }
+            // Return true to allow the link to proceed
+            return true;
+        }
+
+        function getPlayStyleText() {
+            if (!answers.q1 || answers.q1.length === 0) return '';
+            const styles = answers.q1.map(s => {
+                if (s === 'quick') return 'quick and shifty player';
+                if (s === 'shooter') return 'shooter';
+                if (s === 'big') return 'big/post player';
+                if (s === 'versatile') return 'versatile player';
+                return 'player';
+            });
+            return `You're a ${styles.join(' and ')}.`;
+        }
+
+        function getCourtText() {
+            if (!answers.q6 || answers.q6.length === 0) return '';
+            const court = answers.q6[0];
+            if (court === 'outdoor') return 'You need shoes built for outdoor durability.';
+            if (court === 'indoor') return 'You play on indoor courts where traction is key.';
+            return 'You need versatile shoes for both indoor and outdoor play.';
+        }
+
+        function getSupportText() {
+            if (!answers.q3 || answers.q3.length === 0) return '';
+            if (answers.q3.includes('extremely') || answers.q3.includes('important')) {
+                return 'Ankle support is a priority for you.';
+            }
+            return '';
+        }
+
+        function getPersonalizedReason(shoe, type) {
+            let reason = 'This shoe scored highest across all your requirements. ';
+            
+            if (answers.q1 && answers.q1.some(s => shoe.playStyle.includes(s))) {
+                const style = answers.q1.find(s => shoe.playStyle.includes(s));
+                if (style === 'quick') reason += 'Perfect for your quick, shifty playing style. ';
+                if (style === 'shooter') reason += 'Ideal for shooters who need court feel. ';
+                if (style === 'big') reason += 'Built for power players in the post. ';
+            }
+            
+            if (answers.q6 && answers.q6[0] === 'outdoor' && shoe.court.includes('outdoor')) {
+                reason += 'Durable enough for outdoor courts. ';
+            }
+            
+            return reason;
+        }
+
+        function restartQuiz() {
+            currentQuestion = 0;
+            Object.keys(answers).forEach(key => delete answers[key]);
+            
+            document.querySelectorAll('.option').forEach(opt => opt.classList.remove('selected'));
+            document.getElementById('injuryInput').value = '';
+            document.getElementById('emailInput').value = '';
+            
+            document.getElementById('results').classList.remove('active');
+            document.getElementById('progressBar').classList.remove('show');
+            showQuestion(0);
+        }
+
+        // Initialize
+        updateProgress();
+    </script>
+</body>
+</html>
